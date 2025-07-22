@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 
 class MoodDetectionButton extends StatelessWidget {
@@ -5,17 +7,22 @@ class MoodDetectionButton extends StatelessWidget {
     super.key,
     required this.icon,
     required this.label,
-    required this.onTap,
+    this.onTap,
+    this.onLongPress,
+    this.image,
   });
 
   final IconData icon;
   final String label;
-  final VoidCallback onTap;
+  final void Function()? onTap;
+  final void Function()? onLongPress;
+  final File? image;
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onTap,
+      onLongPress: onLongPress,
       child: Column(
         children: [
           Container(
@@ -24,7 +31,17 @@ class MoodDetectionButton extends StatelessWidget {
               color: Colors.grey[900],
               borderRadius: BorderRadius.circular(20),
             ),
-            child: Icon(icon, color: Colors.white, size: 40),
+            child: image != null
+                ? ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: Image.file(
+                      image!,
+                      width: 40,
+                      height: 40,
+                      fit: BoxFit.cover,
+                    ),
+                  )
+                : Icon(icon, color: Colors.white, size: 40),
           ),
 
           const SizedBox(height: 8),

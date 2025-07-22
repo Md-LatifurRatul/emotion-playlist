@@ -1,4 +1,5 @@
 import 'package:emo_music_app/controller/current_track_notifier.dart';
+import 'package:emo_music_app/controller/image_picker_provider.dart';
 import 'package:emo_music_app/controller/navigation_provider.dart';
 import 'package:emo_music_app/controller/song_provider.dart';
 import 'package:emo_music_app/model/song_model.dart';
@@ -21,16 +22,7 @@ class EmotionDetectionHomeScreen extends StatefulWidget {
 
 class _EmotionDetectionHomeScreenState
     extends State<EmotionDetectionHomeScreen> {
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      Provider.of<SongProvider>(
-        context,
-        listen: false,
-      ).setMoodAndFetch("happy");
-    });
-  }
+  late final ImagePickerProvider imageProvider;
 
   Future<void> _signOut(BuildContext context) async {
     final firebaseAuthService = FirebaseAuthService();
@@ -54,10 +46,39 @@ class _EmotionDetectionHomeScreenState
   }
 
   @override
+  void initState() {
+    super.initState();
+
+    imageProvider = Provider.of<ImagePickerProvider>(context, listen: false);
+
+    imageProvider.addListener(_onImageLabelsChanged);
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Provider.of<SongProvider>(
+        context,
+        listen: false,
+      ).setMoodAndFetch("happy");
+    });
+  }
+
+  void _onImageLabelsChanged() {
+    final labels = imageProvider.labels;
+    if (labels.isNotEmpty) {
+      final String detectedMood = labels.first.label
+          .toLowerCase(); // highest score, etc.
+      final songProvider = Provider.of<SongProvider>(context, listen: false);
+      songProvider.setMoodAndFetch(detectedMood);
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     final songProvider = context.watch<SongProvider>();
     final currentSongs = songProvider.songs;
-
+    final imageProvider = context.watch<ImagePickerProvider>();
+    final selectedImage = imageProvider.image;
+    final isProcessing = imageProvider.isProcessing;
+    final detectedLabels = imageProvider.labels;
     return Scaffold(
       backgroundColor: Colors.black,
       appBar: AppBar(
@@ -82,7 +103,13 @@ class _EmotionDetectionHomeScreenState
                 MoodDetectionButton(
                   icon: Icons.camera_alt,
                   label: 'Face Detection',
-                  onTap: () {},
+                  image: selectedImage,
+                  onTap: () {
+                    imageProvider.pickImage();
+                  },
+                  onLongPress: () {
+                    imageProvider.captureCameraImage();
+                  },
                 ),
 
                 MoodDetectionButton(
