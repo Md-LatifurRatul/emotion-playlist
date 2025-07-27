@@ -26,6 +26,7 @@ class SongProvider with ChangeNotifier {
 
     try {
       _songs = await _supbaseService.fetchSongsByMood(mood);
+      print("song name: ${_songs.map((song) => song.mood).toList()})");
     } catch (e) {
       log('Error in fetch songs by mood: $e');
       _songs = [];
