@@ -22,7 +22,7 @@ class EmotionDetectionHomeScreen extends StatefulWidget {
 
 class _EmotionDetectionHomeScreenState
     extends State<EmotionDetectionHomeScreen> {
-  late final ImagePickerProvider imageProvider;
+  late final ImagePickerProvider _imagePickerProvider;
 
   Future<void> _signOut(BuildContext context) async {
     final firebaseAuthService = FirebaseAuthService();
@@ -49,25 +49,28 @@ class _EmotionDetectionHomeScreenState
   void initState() {
     super.initState();
 
-    imageProvider = Provider.of<ImagePickerProvider>(context, listen: false);
-
-    imageProvider.addListener(_onImageLabelsChanged);
-
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      Provider.of<SongProvider>(
+      _imagePickerProvider = Provider.of<ImagePickerProvider>(
         context,
         listen: false,
-      ).setMoodAndFetch("happy");
+      );
+
+      final songProvider = Provider.of<SongProvider>(context, listen: false);
+      if (songProvider.currentMood.isEmpty || songProvider.songs.isEmpty) {
+        songProvider.setMoodAndFetch("happy");
+      }
+      _imagePickerProvider.addListener(_onLabelChanged);
     });
   }
 
-  void _onImageLabelsChanged() {
-    final labels = imageProvider.labels;
+  void _onLabelChanged() {
+    final labels = _imagePickerProvider.labels;
     if (labels.isNotEmpty) {
-      final String detectedMood = labels.first.label
-          .toLowerCase(); // highest score, etc.
-      final songProvider = Provider.of<SongProvider>(context, listen: false);
-      songProvider.setMoodAndFetch(detectedMood);
+      final mood = labels.first.label.toLowerCase();
+      Provider.of<SongProvider>(
+        context,
+        listen: false,
+      ).setMoodAndFetch(mood); // This auto-updates UI
     }
   }
 
@@ -77,8 +80,8 @@ class _EmotionDetectionHomeScreenState
     final currentSongs = songProvider.songs;
     final imageProvider = context.watch<ImagePickerProvider>();
     final selectedImage = imageProvider.image;
-    final isProcessing = imageProvider.isProcessing;
-    final detectedLabels = imageProvider.labels;
+    // final isProcessing = imageProvider.isProcessing;
+    // final detectedLabels = imageProvider.labels;
     return Scaffold(
       backgroundColor: Colors.black,
       appBar: AppBar(
@@ -222,5 +225,11 @@ class _EmotionDetectionHomeScreenState
         },
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    _imagePickerProvider.removeListener(_onLabelChanged);
+    super.dispose();
   }
 }

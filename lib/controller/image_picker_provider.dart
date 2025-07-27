@@ -93,7 +93,7 @@ class ImagePickerProvider extends ChangeNotifier {
         inputImage,
       );
       _labels = detectedLabels;
-      log("Image Label :$_labels");
+      log("Image Label :${_labels.map((label) => label.label).toList()}");
 
       if (_labels.isEmpty) {
         log('No labels detected for the image.');
