@@ -90,6 +90,8 @@ flutter:
   assets:
     - assets/images/
     - assets/ml/
+    - assets/ml/labels_audio.txt
+    - assets/ml/emotion_audio.tflite
   #   - images/a_dot_ham.jpeg
 
   # An image asset can refer to one or more resolution-specific "variants", see

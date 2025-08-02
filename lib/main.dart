@@ -1,4 +1,5 @@
 import 'package:emo_music_app/app.dart';
+import 'package:emo_music_app/controller/audio_emotion_provider.dart';
 import 'package:emo_music_app/controller/current_track_notifier.dart';
 import 'package:emo_music_app/controller/image_picker_provider.dart';
 import 'package:emo_music_app/controller/navigation_provider.dart';
@@ -31,6 +32,9 @@ Future<void> main() async {
         ),
         ChangeNotifierProvider<ImagePickerProvider>(
           create: (_) => ImagePickerProvider(),
+        ),
+        ChangeNotifierProvider<AudioEmotionProvider>(
+          create: (_) => AudioEmotionProvider(),
         ),
       ],
 

@@ -10,6 +10,7 @@ class MoodDetectionButton extends StatelessWidget {
     this.onTap,
     this.onLongPress,
     this.image,
+    this.isLoading = false,
   });
 
   final IconData icon;
@@ -17,21 +18,39 @@ class MoodDetectionButton extends StatelessWidget {
   final void Function()? onTap;
   final void Function()? onLongPress;
   final File? image;
+  final bool isLoading;
 
   @override
   Widget build(BuildContext context) {
+    final effectiveOnTap = isLoading ? null : onTap;
+    final effectiveOnLongPress = isLoading ? null : onLongPress;
+
     return GestureDetector(
-      onTap: onTap,
-      onLongPress: onLongPress,
+      onTap: effectiveOnTap,
+      onLongPress: effectiveOnLongPress,
       child: Column(
         children: [
           Container(
+            width: 72,
+            height: 72,
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               color: Colors.grey[900],
               borderRadius: BorderRadius.circular(20),
             ),
-            child: image != null
+
+            child: isLoading
+                ? const Center(
+                    child: SizedBox(
+                      width: 24,
+                      height: 24,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
+                    ),
+                  )
+                : image != null
                 ? ClipRRect(
                     borderRadius: BorderRadius.circular(12),
                     child: Image.file(
@@ -43,7 +62,6 @@ class MoodDetectionButton extends StatelessWidget {
                   )
                 : Icon(icon, color: Colors.white, size: 40),
           ),
-
           const SizedBox(height: 8),
           Text(label, style: const TextStyle(color: Colors.white70)),
         ],
