@@ -1,3 +1,4 @@
+import 'package:emo_music_app/controller/audio_emotion_provider.dart';
 import 'package:emo_music_app/controller/current_track_notifier.dart';
 import 'package:emo_music_app/controller/image_picker_provider.dart';
 import 'package:emo_music_app/controller/navigation_provider.dart';
@@ -23,6 +24,31 @@ class EmotionDetectionHomeScreen extends StatefulWidget {
 class _EmotionDetectionHomeScreenState
     extends State<EmotionDetectionHomeScreen> {
   late final ImagePickerProvider _imagePickerProvider;
+  late final AudioEmotionProvider _audioEmotionProvider;
+
+  @override
+  void initState() {
+    super.initState();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _imagePickerProvider = Provider.of<ImagePickerProvider>(
+        context,
+        listen: false,
+      );
+
+      _audioEmotionProvider = Provider.of<AudioEmotionProvider>(
+        context,
+        listen: false,
+      );
+
+      final songProvider = Provider.of<SongProvider>(context, listen: false);
+      if (songProvider.currentMood.isEmpty || songProvider.songs.isEmpty) {
+        songProvider.setMoodAndFetch("happy");
+      }
+      _imagePickerProvider.addListener(_onLabelChanged);
+      _audioEmotionProvider.addListener(_onAudioEmotionChanged);
+    });
+  }
 
   Future<void> _signOut(BuildContext context) async {
     final firebaseAuthService = FirebaseAuthService();
@@ -45,24 +71,6 @@ class _EmotionDetectionHomeScreenState
     }
   }
 
-  @override
-  void initState() {
-    super.initState();
-
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _imagePickerProvider = Provider.of<ImagePickerProvider>(
-        context,
-        listen: false,
-      );
-
-      final songProvider = Provider.of<SongProvider>(context, listen: false);
-      if (songProvider.currentMood.isEmpty || songProvider.songs.isEmpty) {
-        songProvider.setMoodAndFetch("happy");
-      }
-      _imagePickerProvider.addListener(_onLabelChanged);
-    });
-  }
-
   void _onLabelChanged() {
     final labels = _imagePickerProvider.labels;
     if (labels.isNotEmpty) {
@@ -74,9 +82,17 @@ class _EmotionDetectionHomeScreenState
     }
   }
 
+  void _onAudioEmotionChanged() {
+    final mood = _audioEmotionProvider.detectedEmotion.toLowerCase();
+    if (mood.isNotEmpty) {
+      Provider.of<SongProvider>(context, listen: false).setMoodAndFetch(mood);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final songProvider = context.watch<SongProvider>();
+    final audioProvider = context.watch<AudioEmotionProvider>();
     final currentSongs = songProvider.songs;
     final imageProvider = context.watch<ImagePickerProvider>();
     final selectedImage = imageProvider.image;
@@ -118,7 +134,10 @@ class _EmotionDetectionHomeScreenState
                 MoodDetectionButton(
                   icon: Icons.mic,
                   label: 'Speech Detection',
-                  onTap: () async {},
+                  isLoading:
+                      audioProvider.isRecording || audioProvider.isProcessing,
+                  onTap: () =>
+                      _audioEmotionProvider.startRecordingAndPrediction(),
                 ),
               ],
             ),
@@ -230,6 +249,7 @@ class _EmotionDetectionHomeScreenState
   @override
   void dispose() {
     _imagePickerProvider.removeListener(_onLabelChanged);
+    _audioEmotionProvider.removeListener(_onAudioEmotionChanged);
     super.dispose();
   }
 }
