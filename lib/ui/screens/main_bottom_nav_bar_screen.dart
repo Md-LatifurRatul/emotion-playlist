@@ -2,6 +2,7 @@ import 'package:emo_music_app/controller/navigation_provider.dart';
 import 'package:emo_music_app/ui/screens/chat-screen/chat_screen.dart';
 import 'package:emo_music_app/ui/screens/emotion_detection_home_screen.dart';
 import 'package:emo_music_app/ui/screens/music_player/music_player_screen.dart';
+import 'package:emo_music_app/ui/screens/video-player/video_list_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -16,11 +17,13 @@ class _MainBottomNavBarScreenState extends State<MainBottomNavBarScreen> {
   final List<Widget> _pages = [
     const EmotionDetectionHomeScreen(),
     const MusicPlayerScreen(),
+    const VideoListScreen(),
     const ChatScreen(),
   ];
   static const List<BottomNavigationBarItem> _navItems = [
     BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
     BottomNavigationBarItem(icon: Icon(Icons.music_note), label: "Music"),
+    BottomNavigationBarItem(icon: Icon(Icons.video_collection), label: "Video"),
     BottomNavigationBarItem(icon: Icon(Icons.chat), label: "Chat"),
   ];
 

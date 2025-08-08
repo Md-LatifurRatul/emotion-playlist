@@ -48,9 +48,11 @@ dependencies:
   google_mlkit_image_labeling: ^0.14.1
   path: ^1.9.1
   path_provider: ^2.1.5
-  tflite_flutter: ^0.11.0
   record: ^6.0.0
-  flutter_sound_processing: ^0.1.0
+  tflite_flutter: ^0.11.0
+  youtube_player_flutter: ^9.1.2
+
+  
 
 
 
@@ -90,8 +92,9 @@ flutter:
   assets:
     - assets/images/
     - assets/ml/
-    - assets/ml/labels_audio.txt
-    - assets/ml/emotion_audio.tflite
+    # - assets/ml/labels_audio.txt
+    # - assets/emotion_audio.tflite
+    # - assets/emotion_audio_pro.tflite
   #   - images/a_dot_ham.jpeg
 
   # An image asset can refer to one or more resolution-specific "variants", see

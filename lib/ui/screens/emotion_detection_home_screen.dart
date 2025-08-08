@@ -3,10 +3,13 @@ import 'package:emo_music_app/controller/current_track_notifier.dart';
 import 'package:emo_music_app/controller/image_picker_provider.dart';
 import 'package:emo_music_app/controller/navigation_provider.dart';
 import 'package:emo_music_app/controller/song_provider.dart';
+import 'package:emo_music_app/controller/video_provider.dart';
 import 'package:emo_music_app/model/song_model.dart';
+import 'package:emo_music_app/model/video_item.dart';
 import 'package:emo_music_app/services/auth_exception.dart';
 import 'package:emo_music_app/services/firebase_auth_service.dart';
 import 'package:emo_music_app/ui/screens/auth/login_screen.dart';
+import 'package:emo_music_app/ui/screens/video-player/video_player_screen.dart';
 import 'package:emo_music_app/ui/widgets/confirm_alert_dialogue.dart';
 import 'package:emo_music_app/ui/widgets/mood_detection_button.dart';
 import 'package:emo_music_app/ui/widgets/snack_message.dart';
@@ -25,6 +28,7 @@ class _EmotionDetectionHomeScreenState
     extends State<EmotionDetectionHomeScreen> {
   late final ImagePickerProvider _imagePickerProvider;
   late final AudioEmotionProvider _audioEmotionProvider;
+  late final VideoProvider _videoProvider;
 
   @override
   void initState() {
@@ -41,10 +45,14 @@ class _EmotionDetectionHomeScreenState
         listen: false,
       );
 
+      _videoProvider = Provider.of<VideoProvider>(context, listen: false);
+
       final songProvider = Provider.of<SongProvider>(context, listen: false);
       if (songProvider.currentMood.isEmpty || songProvider.songs.isEmpty) {
         songProvider.setMoodAndFetch("happy");
+        _videoProvider.setMoodAndFetch("happy");
       }
+
       _imagePickerProvider.addListener(_onLabelChanged);
       _audioEmotionProvider.addListener(_onAudioEmotionChanged);
     });
@@ -75,10 +83,8 @@ class _EmotionDetectionHomeScreenState
     final labels = _imagePickerProvider.labels;
     if (labels.isNotEmpty) {
       final mood = labels.first.label.toLowerCase();
-      Provider.of<SongProvider>(
-        context,
-        listen: false,
-      ).setMoodAndFetch(mood); // This auto-updates UI
+      Provider.of<SongProvider>(context, listen: false).setMoodAndFetch(mood);
+      _videoProvider.setMoodAndFetch(mood);
     }
   }
 
@@ -86,6 +92,7 @@ class _EmotionDetectionHomeScreenState
     final mood = _audioEmotionProvider.detectedEmotion.toLowerCase();
     if (mood.isNotEmpty) {
       Provider.of<SongProvider>(context, listen: false).setMoodAndFetch(mood);
+      _videoProvider.setMoodAndFetch(mood);
     }
   }
 
@@ -93,15 +100,16 @@ class _EmotionDetectionHomeScreenState
   Widget build(BuildContext context) {
     final songProvider = context.watch<SongProvider>();
     final audioProvider = context.watch<AudioEmotionProvider>();
+    final videoProvider = context.watch<VideoProvider>();
     final currentSongs = songProvider.songs;
+    final currentVideos = videoProvider.videos;
     final imageProvider = context.watch<ImagePickerProvider>();
     final selectedImage = imageProvider.image;
-    // final isProcessing = imageProvider.isProcessing;
-    // final detectedLabels = imageProvider.labels;
+
     return Scaffold(
       backgroundColor: Colors.black,
       appBar: AppBar(
-        title: Text(
+        title: const Text(
           "Emotion-Based Music",
           style: TextStyle(color: Colors.white),
         ),
@@ -109,7 +117,6 @@ class _EmotionDetectionHomeScreenState
         elevation: 0,
         actions: [_buildLogOut(context)],
       ),
-
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -130,37 +137,39 @@ class _EmotionDetectionHomeScreenState
                     imageProvider.captureCameraImage();
                   },
                 ),
-
                 MoodDetectionButton(
                   icon: Icons.mic,
                   label: 'Speech Detection',
+                  image: null,
                   isLoading:
                       audioProvider.isRecording || audioProvider.isProcessing,
-                  onTap: () =>
-                      _audioEmotionProvider.startRecordingAndPrediction(),
+                  onTap: () async {
+                    await audioProvider.startRecordingAndPredict(context);
+                    audioProvider.fetchSongs(context);
+                  },
                 ),
               ],
             ),
           ),
-
           const SizedBox(height: 30),
 
+          // Songs List Title
           Padding(
-            padding: EdgeInsets.symmetric(horizontal: 20),
+            padding: const EdgeInsets.symmetric(horizontal: 20),
             child: Text(
               "Mood Songs List (${songProvider.currentMood.toUpperCase()})",
-
-              style: TextStyle(
+              style: const TextStyle(
                 color: Colors.white,
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
               ),
             ),
           ),
-
           const SizedBox(height: 10),
 
+          // Songs List
           Expanded(
+            flex: 2,
             child: songProvider.isLoading
                 ? const Center(child: CircularProgressIndicator())
                 : currentSongs.isEmpty
@@ -171,12 +180,49 @@ class _EmotionDetectionHomeScreenState
                     ),
                   )
                 : ListView.builder(
-                    itemCount: songProvider.songs.length,
+                    itemCount: currentSongs.length,
                     padding: const EdgeInsets.symmetric(horizontal: 20),
                     itemBuilder: (context, index) {
                       final SongModel song = currentSongs[index];
-
                       return _buildPlaylistCard(song, currentSongs, index);
+                    },
+                  ),
+          ),
+
+          const SizedBox(height: 10),
+
+          // Videos Title
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Text(
+              "Mood Videos List (${songProvider.currentMood.toUpperCase()})",
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+          const SizedBox(height: 10),
+
+          // Videos List
+          Expanded(
+            flex: 2,
+            child: videoProvider.isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : currentVideos.isEmpty
+                ? const Center(
+                    child: Text(
+                      "No videos found for this mood",
+                      style: TextStyle(color: Colors.white),
+                    ),
+                  )
+                : ListView.builder(
+                    itemCount: currentVideos.length,
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    itemBuilder: (context, index) {
+                      final video = currentVideos[index];
+                      return _buildVideoCard(video);
                     },
                   ),
           ),
@@ -188,7 +234,6 @@ class _EmotionDetectionHomeScreenState
   Widget _buildLogOut(BuildContext context) {
     return IconButton(
       style: IconButton.styleFrom(backgroundColor: Colors.tealAccent),
-
       onPressed: () {
         ConfirmAlertDialogue.showAlertDialogue(
           context,
@@ -200,47 +245,79 @@ class _EmotionDetectionHomeScreenState
           },
         );
       },
-      icon: Icon(Icons.logout),
+      icon: const Icon(Icons.logout),
     );
   }
 
   Widget _buildPlaylistCard(
-    SongModel songs,
+    SongModel song,
     List<SongModel> currentSongs,
     int index,
   ) {
     return Card(
       color: Colors.grey[850],
-
       margin: const EdgeInsets.symmetric(vertical: 10),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-
       child: ListTile(
         leading: ClipRRect(
           borderRadius: BorderRadius.circular(8),
           child: Image.network(
-            songs.coverpage,
+            song.coverpage,
             width: 50,
             height: 50,
             fit: BoxFit.cover,
           ),
         ),
         title: Text(
-          songs.title,
+          song.title,
           style: const TextStyle(
             color: Colors.white,
             fontWeight: FontWeight.bold,
           ),
         ),
         subtitle: Text(
-          songs.artist,
+          song.artist,
           style: const TextStyle(color: Colors.white70),
         ),
-
         trailing: const Icon(Icons.play_arrow, color: Colors.white),
         onTap: () {
           context.read<CurrentTrackNotifier>().setPlayList(currentSongs, index);
           context.read<NavigationProvider>().setSelectedIndex(1);
+        },
+      ),
+    );
+  }
+
+  Widget _buildVideoCard(VideoItem video) {
+    return Card(
+      color: Colors.grey[850],
+      margin: const EdgeInsets.symmetric(vertical: 10),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: ListTile(
+        leading: ClipRRect(
+          borderRadius: BorderRadius.circular(8),
+          child: Image.network(
+            video.thumbnailUrl,
+            width: 50,
+            height: 50,
+            fit: BoxFit.cover,
+          ),
+        ),
+        title: Text(
+          video.title,
+          style: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        trailing: const Icon(Icons.play_arrow, color: Colors.white),
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => VideoPlayerScreen(videoId: video.videoId),
+            ),
+          );
         },
       ),
     );

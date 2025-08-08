@@ -4,6 +4,7 @@ import 'package:emo_music_app/controller/current_track_notifier.dart';
 import 'package:emo_music_app/controller/image_picker_provider.dart';
 import 'package:emo_music_app/controller/navigation_provider.dart';
 import 'package:emo_music_app/controller/song_provider.dart';
+import 'package:emo_music_app/controller/video_provider.dart';
 import 'package:emo_music_app/core/supabase_key.dart';
 import 'package:emo_music_app/firebase_options.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -36,6 +37,11 @@ Future<void> main() async {
         ChangeNotifierProvider<AudioEmotionProvider>(
           create: (_) => AudioEmotionProvider(),
         ),
+
+        // ChangeNotifierProvider<LiveCameraEmotionProvider>(
+        //   create: (_) => LiveCameraEmotionProvider(),
+        // ),
+        ChangeNotifierProvider<VideoProvider>(create: (_) => VideoProvider()),
       ],
 
       child: const EmotionDetecterPlaylistApp(),
