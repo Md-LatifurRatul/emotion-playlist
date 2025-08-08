@@ -1,32 +1,26 @@
+import 'package:emo_music_app/controller/song_provider.dart';
 import 'package:emo_music_app/ui/screens/splash_screen.dart';
+import 'package:emo_music_app/utils/theme_utils.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 class EmotionDetecterPlaylistApp extends StatelessWidget {
   const EmotionDetecterPlaylistApp({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final songProvider = context.watch<SongProvider>();
+    final currentMood = songProvider.currentMood;
+
     return MaterialApp(
       debugShowCheckedModeBanner: false,
 
       title: "Emotion Playlist App",
       home: SplashScreen(),
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-        useMaterial3: true,
-        inputDecorationTheme: _inputStyleDecorationTheme(),
-      ),
+      theme: getThemeForMood(currentMood),
 
       // home: const MainBottomNavBarScreen(),
       // home: MusicPlayerScreen(),
-    );
-  }
-
-  InputDecorationTheme _inputStyleDecorationTheme() {
-    return InputDecorationTheme(
-      filled: true,
-      fillColor: Colors.white,
-      border: OutlineInputBorder(),
     );
   }
 }
