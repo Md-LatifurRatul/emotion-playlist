@@ -1,3 +1,4 @@
+import 'package:emo_music_app/controller/song_provider.dart';
 import 'package:emo_music_app/controller/video_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -12,27 +13,19 @@ class VideoListScreen extends StatefulWidget {
 }
 
 class _VideoListScreenState extends State<VideoListScreen> {
+  String? _lastMood;
+
   @override
-  void initState() {
-    super.initState();
+  void didChangeDependencies() {
+    super.didChangeDependencies();
 
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final videoProvider = Provider.of<VideoProvider>(context, listen: false);
+    final currentMood = context.watch<SongProvider>().currentMood;
+    final videoProvider = context.read<VideoProvider>();
 
-      // If empty, fetch for default mood
-      if (videoProvider.videos.isEmpty) {
-        videoProvider.setMoodAndFetch(videoProvider.currentMood);
-      }
-
-      // Listen for mood changes in real-time
-      videoProvider.addListener(() {
-        if (mounted) {
-          setState(() {
-            // This triggers rebuild so updated videos show immediately
-          });
-        }
-      });
-    });
+    if (_lastMood != currentMood) {
+      _lastMood = currentMood;
+      videoProvider.setMoodAndFetch(currentMood);
+    }
   }
 
   @override
