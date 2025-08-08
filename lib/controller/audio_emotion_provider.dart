@@ -1,167 +1,112 @@
+import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
-import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:flutter_sound_processing/flutter_sound_processing.dart';
+import 'package:http/http.dart' as http;
+import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
+import 'package:provider/provider.dart';
 import 'package:record/record.dart';
-import 'package:tflite_flutter/tflite_flutter.dart';
+
+import 'song_provider.dart';
 
 class AudioEmotionProvider extends ChangeNotifier {
-  final AudioRecorder _audioRecorder = AudioRecorder();
-  // For TFLite model
-  Interpreter? _interpreter;
-  List<String> _labels = [];
+  final _recorder = AudioRecorder();
+  bool isRecording = false;
+  bool isProcessing = false;
+  String detectedEmotion = "";
 
-  bool _isRecording = false;
-  bool _isProcessing = false;
-  String _detectedEmotion = '';
+  Timer? _stopTimer;
 
-  // Getters for the UI to read the state
-  bool get isRecording => _isRecording;
-  bool get isProcessing => _isProcessing;
-  String get detectedEmotion => _detectedEmotion;
-
-  AudioEmotionProvider() {
-    // Load the model and labels when the provider is created
-    _loadModelAndLabels();
-  }
-
-  Future<void> _loadModelAndLabels() async {
+  /// Starts recording and handles the prediction + song fetch flow
+  Future<void> startRecordingAndPredict(BuildContext context) async {
     try {
-      _interpreter = await Interpreter.fromAsset(
-        'assets/ml/emotion_audio.tflite',
-      );
-      final labelsData = await rootBundle.loadString(
-        'assets/ml/labels_audio.txt',
-      );
-      _labels = labelsData
-          .split('\n')
-          .where((label) => label.isNotEmpty)
-          .toList();
-      print("Audio model and labels loaded successfully.");
-    } catch (e) {
-      print("Error loading audio model or labels: $e");
-    }
-  }
+      final hasPermission = await _recorder.hasPermission();
+      if (!hasPermission) {
+        print("Microphone permission not granted.");
+        return;
+      }
 
-  /// Starting recording audio for 3 seconds and then triggers prediction.
-  Future<void> startRecordingAndPrediction() async {
-    if (_isRecording || _isProcessing) return; // Prevent multiple triggering
-
-    if (await _audioRecorder.hasPermission()) {
-      _isRecording = true;
+      isRecording = true;
+      isProcessing = false;
+      detectedEmotion = "";
       notifyListeners();
 
       final tempDir = await getTemporaryDirectory();
-      final filePath = '${tempDir.path}/temp_audio.m4a';
+      final path = p.join(tempDir.path, 'audio.wav');
 
-      // Start recording
-      await _audioRecorder.start(const RecordConfig(), path: filePath);
+      await _recorder.start(
+        const RecordConfig(
+          encoder: AudioEncoder.wav,
+          bitRate: 128000,
+          sampleRate: 16000,
+        ),
+        path: path,
+      );
 
-      // Wait for 3 seconds to match the training data duration
       await Future.delayed(const Duration(seconds: 3));
 
-      // Stop recording and get the file path
-      final audioPath = await _audioRecorder.stop();
-      _isRecording = false;
+      final filePath = await _recorder.stop();
 
-      if (audioPath != null) {
-        // Once recording is done, process the audio file
-        await _processAndPredict(audioPath);
-      } else {
-        notifyListeners();
+      isRecording = false;
+      isProcessing = true;
+      notifyListeners();
+
+      if (filePath != null) {
+        await _sendToAPI(File(filePath), context);
       }
-    } else {
-      print("Microphone permission denied.");
+    } catch (e) {
+      print("Recording error: $e");
+    } finally {
+      isRecording = false;
+      isProcessing = false;
+      notifyListeners();
     }
   }
 
-  /// Processes the recorded audio file, runs inference, and updates the state.
-  Future<void> _processAndPredict(String audioPath) async {
-    if (_interpreter == null) return;
-
-    _isProcessing = true;
-    notifyListeners();
-
+  /// Sends recorded audio to Flask API for prediction
+  Future<void> _sendToAPI(File audioFile, BuildContext context) async {
     try {
-      final audioBytes = await File(audioPath).readAsBytes();
-      final Int16List int16List = audioBytes.buffer.asInt16List();
-      final List<double> doubleList = int16List
-          .map((e) => e.toDouble())
-          .toList();
+      final uri = Uri.parse("http://192.168.0.100:5000/predict");
 
-      //Extract MFCC features using the same parameters as in training
+      final request = http.MultipartRequest("POST", uri);
+      request.files.add(
+        await http.MultipartFile.fromPath("audio", audioFile.path),
+      );
 
-      const int nMFCC = 40;
+      final response = await request.send();
+      final responseBody = await response.stream.bytesToString();
 
-      final Float64List? mfccFeatures = await FlutterSoundProcessing()
-          .getFeatureMatrix(
-            signals: doubleList,
-            sampleRate: 16000,
-            nMels: 128,
-            mfcc: nMFCC,
-            fftSize: 512,
-            hopLength: 256,
-          );
-      if (mfccFeatures == null || mfccFeatures.isEmpty) {
-        throw Exception("Failed to extract MFCC features.");
+      if (response.statusCode == 200) {
+        final decoded = json.decode(responseBody);
+        detectedEmotion = decoded["emotion"] ?? "";
+        print("Detected emotion: $detectedEmotion");
+
+        notifyListeners();
+
+        // Automatically fetch songs based on detected emotion
+        fetchSongs(context);
+      } else {
+        print("API Error: ${response.statusCode}");
+        print("Response body: $responseBody");
       }
-
-      // Average the features across time to get a single feature vector
-      // This replicates the np.mean(..., axis=0) logic from Python
-      final int numFrames = mfccFeatures.length ~/ nMFCC;
-      if (numFrames == 0) {
-        throw Exception("MFCC features resulted in zero frames.");
-      }
-
-      List<double> averagedMfcc = List.filled(nMFCC, 0.0);
-      for (int i = 0; i < mfccFeatures.length; i++) {
-        averagedMfcc[i % nMFCC] += mfccFeatures[i];
-      }
-
-      // Finalize the average by dividing by the number of frames
-      for (int j = 0; j < nMFCC; j++) {
-        averagedMfcc[j] /= numFrames;
-      }
-      //  Prepare the input for the TFLite model (shape: [1, 40, 1])
-      var input = [
-        averagedMfcc.map((e) => [e]).toList(),
-      ];
-      var output = List.filled(
-        1 * _labels.length,
-        0,
-      ).reshape([1, _labels.length]);
-
-      // Run inference
-      _interpreter!.run(input, output);
-
-      // Find the emotion with the highest probability
-      List<double> outputList = output[0];
-      int maxIndex = 0;
-      double maxScore = 0.0;
-      for (int i = 0; i < outputList.length; i++) {
-        if (outputList[i] > maxScore) {
-          maxScore = outputList[i];
-          maxIndex = i;
-        }
-      }
-
-      _detectedEmotion = _labels[maxIndex];
-      print("Detected Audio Emotion: $_detectedEmotion");
     } catch (e) {
-      print("Error during audio processing or prediction: $e");
-    } finally {
-      _isProcessing = false;
-      notifyListeners(); // Notify UI to stop loading and update with emotion
+      print("Error sending audio to API: $e");
+    }
+  }
+
+  /// Calls SongProvider to fetch songs based on emotion
+  void fetchSongs(BuildContext context) {
+    if (detectedEmotion.isNotEmpty) {
+      final songProvider = Provider.of<SongProvider>(context, listen: false);
+      songProvider.setMoodAndFetch(detectedEmotion);
     }
   }
 
   @override
   void dispose() {
-    _audioRecorder.dispose();
-    _interpreter?.close();
+    _stopTimer?.cancel();
     super.dispose();
   }
 }
