@@ -2,6 +2,7 @@ import 'package:emo_music_app/app.dart';
 import 'package:emo_music_app/controller/audio_emotion_provider.dart';
 import 'package:emo_music_app/controller/current_track_notifier.dart';
 import 'package:emo_music_app/controller/image_picker_provider.dart';
+import 'package:emo_music_app/controller/mood_history_provider.dart';
 import 'package:emo_music_app/controller/navigation_provider.dart';
 import 'package:emo_music_app/controller/song_provider.dart';
 import 'package:emo_music_app/controller/video_provider.dart';
@@ -20,7 +21,7 @@ Future<void> main() async {
     url: SupabaseKey.supabaseUrl,
     anonKey: SupabaseKey.supabaseKey,
   );
-
+  final supabaseClient = Supabase.instance.client;
   runApp(
     MultiProvider(
       providers: [
@@ -42,6 +43,9 @@ Future<void> main() async {
         //   create: (_) => LiveCameraEmotionProvider(),
         // ),
         ChangeNotifierProvider<VideoProvider>(create: (_) => VideoProvider()),
+        ChangeNotifierProvider<MoodHistoryProvider>(
+          create: (_) => MoodHistoryProvider(supabase: supabaseClient),
+        ),
       ],
 
       child: const EmotionDetecterPlaylistApp(),

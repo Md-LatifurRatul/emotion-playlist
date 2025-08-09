@@ -1,6 +1,7 @@
 import 'package:emo_music_app/controller/navigation_provider.dart';
 import 'package:emo_music_app/ui/screens/chat-screen/chat_screen.dart';
 import 'package:emo_music_app/ui/screens/emotion_detection_home_screen.dart';
+import 'package:emo_music_app/ui/screens/mood-history/mood_history_screen.dart';
 import 'package:emo_music_app/ui/screens/music_player/music_player_screen.dart';
 import 'package:emo_music_app/ui/screens/video-player/video_list_screen.dart';
 import 'package:flutter/material.dart';
@@ -19,12 +20,14 @@ class _MainBottomNavBarScreenState extends State<MainBottomNavBarScreen> {
     const MusicPlayerScreen(),
     const VideoListScreen(),
     const ChatScreen(),
+    const MoodHistoryChartScreen(),
   ];
   static const List<BottomNavigationBarItem> _navItems = [
     BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
     BottomNavigationBarItem(icon: Icon(Icons.music_note), label: "Music"),
     BottomNavigationBarItem(icon: Icon(Icons.video_collection), label: "Video"),
     BottomNavigationBarItem(icon: Icon(Icons.chat), label: "Chat"),
+    BottomNavigationBarItem(icon: Icon(Icons.bar_chart), label: "Mood History"),
   ];
 
   @override
@@ -33,6 +36,7 @@ class _MainBottomNavBarScreenState extends State<MainBottomNavBarScreen> {
     return Scaffold(
       body: _pages[nav.selectedIndex],
       bottomNavigationBar: BottomNavigationBar(
+        type: BottomNavigationBarType.fixed,
         elevation: 10,
 
         currentIndex: nav.selectedIndex,

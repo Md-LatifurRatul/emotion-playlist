@@ -1,6 +1,7 @@
 import 'package:emo_music_app/controller/audio_emotion_provider.dart';
 import 'package:emo_music_app/controller/current_track_notifier.dart';
 import 'package:emo_music_app/controller/image_picker_provider.dart';
+import 'package:emo_music_app/controller/mood_history_provider.dart';
 import 'package:emo_music_app/controller/navigation_provider.dart';
 import 'package:emo_music_app/controller/song_provider.dart';
 import 'package:emo_music_app/controller/video_provider.dart';
@@ -83,6 +84,7 @@ class _EmotionDetectionHomeScreenState
     final labels = _imagePickerProvider.labels;
     if (labels.isNotEmpty) {
       final mood = labels.first.label.toLowerCase();
+      Provider.of<MoodHistoryProvider>(context, listen: false).addMood(mood);
       Provider.of<SongProvider>(context, listen: false).setMoodAndFetch(mood);
       _videoProvider.setMoodAndFetch(mood);
     }
@@ -91,6 +93,7 @@ class _EmotionDetectionHomeScreenState
   void _onAudioEmotionChanged() {
     final mood = _audioEmotionProvider.detectedEmotion.toLowerCase();
     if (mood.isNotEmpty) {
+      Provider.of<MoodHistoryProvider>(context, listen: false).addMood(mood);
       Provider.of<SongProvider>(context, listen: false).setMoodAndFetch(mood);
       _videoProvider.setMoodAndFetch(mood);
     }
