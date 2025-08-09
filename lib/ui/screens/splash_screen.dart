@@ -1,10 +1,12 @@
 import 'dart:async';
 
+import 'package:emo_music_app/controller/mood_history_provider.dart';
 import 'package:emo_music_app/services/firebase_auth_service.dart';
 import 'package:emo_music_app/ui/screens/auth/login_screen.dart';
 import 'package:emo_music_app/ui/screens/main_bottom_nav_bar_screen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -50,6 +52,10 @@ class _SplashScreenState extends State<SplashScreen>
         (route) => false,
       );
     } else {
+      Provider.of<MoodHistoryProvider>(
+        context,
+        listen: false,
+      ).setUserId(user.uid);
       Navigator.pushAndRemoveUntil(
         context,
         MaterialPageRoute(builder: (context) => const MainBottomNavBarScreen()),

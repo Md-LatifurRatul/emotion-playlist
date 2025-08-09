@@ -51,6 +51,7 @@ dependencies:
   record: ^6.0.0
   tflite_flutter: ^0.11.0
   youtube_player_flutter: ^9.1.2
+  fl_chart: ^1.0.0
 
   
 

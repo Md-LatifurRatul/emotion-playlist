@@ -1,4 +1,5 @@
 import 'package:animate_do/animate_do.dart';
+import 'package:emo_music_app/controller/mood_history_provider.dart';
 import 'package:emo_music_app/services/auth_exception.dart';
 import 'package:emo_music_app/services/firebase_auth_service.dart';
 import 'package:emo_music_app/ui/screens/auth/sign_up_screen.dart';
@@ -6,8 +7,10 @@ import 'package:emo_music_app/ui/screens/main_bottom_nav_bar_screen.dart';
 import 'package:emo_music_app/ui/widgets/custom_auth_button.dart';
 import 'package:emo_music_app/ui/widgets/custom_text_field.dart';
 import 'package:emo_music_app/ui/widgets/snack_message.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 class LoginScreen extends StatefulWidget {
   final VoidCallback? onSignUpTap;
@@ -30,7 +33,13 @@ class _LoginScreenState extends State<LoginScreen> {
         _passwordTEController.text.trim(),
       );
       print(user);
-
+      User? userFirebase = FirebaseAuthService().currentUser;
+      if (userFirebase != null) {
+        Provider.of<MoodHistoryProvider>(
+          context,
+          listen: false,
+        ).setUserId(userFirebase.uid);
+      }
       if (mounted) {
         SnackMessage.showSnakMessage(context, "Sign in success");
 

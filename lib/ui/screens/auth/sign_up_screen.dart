@@ -239,19 +239,18 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 ),
               ),
 
-              Padding(
-                padding: EdgeInsets.symmetric(horizontal: 16),
+              // Padding(
+              //   padding: EdgeInsets.symmetric(horizontal: 16),
 
-                child: Text(
-                  "Or continue with",
-                  style: TextStyle(
-                    color: Color(0xFF1D1C1D),
+              //   child: Text(
+              //     "Or continue with",
+              //     style: TextStyle(
+              //       color: Color(0xFF1D1C1D),
 
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ),
-
+              //       fontWeight: FontWeight.w500,
+              //     ),
+              //   ),
+              // ),
               Expanded(
                 child: Container(
                   height: 1,
@@ -265,66 +264,66 @@ class _SignUpScreenState extends State<SignUpScreen> {
               ),
             ],
           ),
-          SizedBox(height: 24),
+          // SizedBox(height: 24),
 
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              ElasticIn(
-                duration: Duration(milliseconds: 800),
-                delay: Duration(milliseconds: 1000),
-                child: _buildSocialButton(
-                  icon: Icons.g_mobiledata,
-                  label: "Google",
-                  gradientColors: [Color(0xFFDB4437), Color(0xFFF66D5B)],
-                ),
-              ),
-            ],
-          ),
+          // Row(
+          //   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          //   children: [
+          //     ElasticIn(
+          //       duration: Duration(milliseconds: 800),
+          //       delay: Duration(milliseconds: 1000),
+          //       child: _buildSocialButton(
+          //         icon: Icons.g_mobiledata,
+          //         label: "Google",
+          //         gradientColors: [Color(0xFFDB4437), Color(0xFFF66D5B)],
+          //       ),
+          //     ),
+          //   ],
+          // ),
         ],
       ),
     );
   }
 
-  Widget _buildSocialButton({
-    required IconData icon,
-    required String label,
-    required List<Color> gradientColors,
-  }) {
-    return Container(
-      height: 55,
-      width: 150,
+  // Widget _buildSocialButton({
+  //   required IconData icon,
+  //   required String label,
+  //   required List<Color> gradientColors,
+  // }) {
+  //   return Container(
+  //     height: 55,
+  //     width: 150,
 
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            gradientColors[0].withValues(alpha: 0.1),
-            gradientColors[1].withValues(alpha: 0.1),
-          ],
-          begin: Alignment.centerLeft,
-          end: Alignment.centerRight,
-        ),
+  //     decoration: BoxDecoration(
+  //       gradient: LinearGradient(
+  //         colors: [
+  //           gradientColors[0].withValues(alpha: 0.1),
+  //           gradientColors[1].withValues(alpha: 0.1),
+  //         ],
+  //         begin: Alignment.centerLeft,
+  //         end: Alignment.centerRight,
+  //       ),
 
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(icon, color: gradientColors[0]),
+  //       borderRadius: BorderRadius.circular(16),
+  //     ),
+  //     child: Row(
+  //       mainAxisAlignment: MainAxisAlignment.center,
+  //       children: [
+  //         Icon(icon, color: gradientColors[0]),
 
-          SizedBox(width: 8),
-          Text(
-            label,
-            style: TextStyle(
-              color: gradientColors[0],
+  //         SizedBox(width: 8),
+  //         Text(
+  //           label,
+  //           style: TextStyle(
+  //             color: gradientColors[0],
 
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+  //             fontWeight: FontWeight.bold,
+  //           ),
+  //         ),
+  //       ],
+  //     ),
+  //   );
+  // }
 
   @override
   void dispose() {
